@@ -3,6 +3,7 @@
 #define lm_hash_h
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 /* __thread int lm_hash_errno; */
@@ -20,7 +21,7 @@ typedef enum lm_hash_err {
 } lm_hash_err_t;
 
 #define LM_HASH_INIT_SIZE               23
-#define LM_HASH_INIT_ENTRY_ITEM_SIZE    3
+#define LM_HASH_INIT_ENTRY_ITEM_SIZE    4
 
 typedef unsigned long lm_hash_t;
 typedef unsigned long lm_slot_t;
@@ -51,6 +52,7 @@ typedef struct lm_hash_table_s {
     size_t consumed;
     size_t modulus;
     size_t capacity;
+    bool must_grow;
 //    char should_resize;
     
     lm_hash_entry_t **entry; //array

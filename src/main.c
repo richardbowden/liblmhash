@@ -5,6 +5,7 @@
 #include "lm_hash.h"
 #include <unistd.h>
 #include <time.h>
+#include <time.h>
 
 size_t load_file(const char *filename, char **result){
     size_t size;
@@ -19,13 +20,14 @@ size_t load_file(const char *filename, char **result){
     size = ftell(f);
     
     /*add one for null terminator*/
-    size += 1;
+//    size++;
     
     fseek(f, 0L, SEEK_SET);
-    *result = (char*)malloc(size * sizeof(char));
+    *result = (char*)malloc(sizeof(char)*size);
     fread(*result, sizeof(char),size, f);
 /*    (*our_var_ptr)++; */
-    (*result)[size] = '\0';
+    
+//    (*result)[size] = '\0';
 /*    
            if (size != rsize)
            {
@@ -137,7 +139,14 @@ char* read_line(char **contents){
 
 
 
-
+void print_hash_table(lm_hash_table_t *table){
+    
+    for (int i = 0; i < table->consumed; i++) {
+        if (table->entry[i] != NULL){
+        printf("index: %d, bucket_consumed: %zu\n", i, table->entry[i]->consumed);
+        }
+    }
+}
 
 
 int main(int argc, char const *argv[])
@@ -150,30 +159,45 @@ int main(int argc, char const *argv[])
     reader.c_size = load_file(p, &reader.contents);
     reader.pos = 0;
 
-    assert(reader.contents[reader.c_size] == '\0');
+    assert(reader.contents[reader.c_size-1] == '\n');
 
-        lm_hash_table_t *t = lm_hash_table_new();
+    lm_hash_table_t *t = lm_hash_table_new();
     
-    
-    
-    
-    //    if (res == LM_HERR){
-    //        printf("%d\n", lm_hash_get_errno());
-    //    }
-    
+    clock_t ttt;
     do {
         my_reader();
         printf("%s\n", buffer);
-            int res = lm_hash_add_string(t, buffer, "a");
-        
-//            if (res == LM_HERR){
-//                printf("%d\n", lm_hash_get_errno());
-//            }
+        if (strlen(buffer) > 0){
+
+              
+              ttt = clock();
+              lm_hash_add_string(t, buffer, "a");
+              ttt = clock() - ttt;
+              double time_taken = ((double)ttt)/CLOCKS_PER_SEC; // in seconds
+            
+              printf("hash add took: %f \n", time_taken);
+            
+            
+            
+        }
         
     }while (reader.eof != 1);
     
 
-
+      clock_t tt;
+      tt = clock();
+      const char *gg = lm_hash_get_string_for_key(t, "agenting");
+      tt = clock() - tt;
+      double time_taken = ((double)tt)/CLOCKS_PER_SEC; // in seconds
+    
+      printf("fun() took %f seconds to execute \n", time_taken);
+    
+    
+        printf("restult: %s\n", gg);
+    
+    
+    
+//print_hash_table(t);
 
     
 

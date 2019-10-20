@@ -23,7 +23,7 @@ message(STATUS "c libout dir" ${LIBRARY_OUTPUT_PATH})
 message(STATUS "cmake src " ${CMAKE_SOURCE_DIR})
 message(STATUS "xxxxx " ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(lmhash ${PROJECT_SOURCE_DIR}/src/main.c ${PROJECT_SOURCE_DIR}/src/lm_hash.c)
+add_executable(lmhash ${PROJECT_SOURCE_DIR}/src/main.c ${PROJECT_SOURCE_DIR}/src/lm_hash.c ${PROJECT_SOURCE_DIR}/include/lm_hash.h)
 
 set_property(TARGET lmhash PROPERTY C_STANDARD 11)
 

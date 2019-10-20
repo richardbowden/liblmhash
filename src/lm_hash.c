@@ -9,7 +9,7 @@
 __thread int lm_hash_errno;
 
 lm_hash_t hash_djb2(const char *str){
-        unsigned long hash = 5381;
+        unsigned long hash = 5381*3;
         int c;
         while ((c = *str++)){
             hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
@@ -43,10 +43,11 @@ lm_hash_table_t *lm_hash_table_new_with_size(size_t count){
     ht->modulus = count;
     ht->capacity = count;
     ht->consumed = 0;
+    ht->must_grow = false;
 //    ht->entry_size = sizeof(lm_hash_entry_t);
     
     lm_hash_entry_t **e;
-    e = calloc(count, sizeof(*e));
+    *e = calloc(count, sizeof(*e));
     ht->entry = e;
 //    ht->should_resize = 0;
     return ht;
@@ -58,7 +59,7 @@ lm_hash_table_t *lm_hash_table_new(){
 
 lm_hash_entry_t* lm_hash_entry_new(){
     lm_hash_entry_t *e = NULL;
-    size_t s = (sizeof(lm_hash_entry_t) + LM_HASH_INIT_ENTRY_ITEM_SIZE * sizeof(lm_hash_item_t*));
+    size_t s = (sizeof(lm_hash_entry_t) + (LM_HASH_INIT_ENTRY_ITEM_SIZE * sizeof(lm_hash_item_t*)));
     e = calloc(1, s);
     e->consumed = 0;
     e->size =LM_HASH_INIT_ENTRY_ITEM_SIZE;
@@ -121,9 +122,23 @@ const char* lm_hash_get_str_value_key(lm_hash_table_t *table, const char *key){
     return NULL;
 }
 
+void lm_hash_table_grow(lm_hash_table_t *table){
+    lm_hash_entry_t *e = NULL;
+    size_t s = (sizeof(lm_hash_entry_t) + LM_HASH_INIT_ENTRY_ITEM_SIZE * sizeof(lm_hash_item_t*));
+    e = calloc(1, s);
+    e->consumed = 0;
+    e->size =LM_HASH_INIT_ENTRY_ITEM_SIZE;
+    return e;
+}
+
 int lm_hash_add_string(lm_hash_table_t *table, const char *key, const char *value){
     assert(table->modulus > 0);
-
+    assert(table->must_grow == false);
+    
+    if (table->must_grow){
+        lm_hash_table_grow(table);
+    }
+    
     lm_hash_t key_hash = 0;
     key_hash = hash_bytes(key);
     
@@ -148,6 +163,9 @@ int lm_hash_add_string(lm_hash_table_t *table, const char *key, const char *valu
         
         lm_hash_add_item_to_entry(item, entry);
         lm_hash_add_entry_to_table(entry, entry_slot, table);
+        if (entry->consumed == LM_HASH_INIT_ENTRY_ITEM_SIZE){
+            table->must_grow = true;
+        }
         
     }else {
         lm_hash_item_t *item = lm_hash_search_entry_for_key(retrieved_entry, key);
@@ -155,8 +173,6 @@ int lm_hash_add_string(lm_hash_table_t *table, const char *key, const char *valu
         if (item != NULL){
             item->value.str = strdup(value);
             return 0;
-//            set_lm_hash_errno(LM_HERR_EXISTS_NO_OVER_WRITE);
-//            return LM_HERR;
         }
         
         lm_hash_item_t *new_item = NULL;
@@ -168,9 +184,9 @@ int lm_hash_add_string(lm_hash_table_t *table, const char *key, const char *valu
         
         lm_hash_add_item_to_entry(new_item, retrieved_entry);
         
-        
-//        printf("we do not support duplicate hashes at the moment new key=%s value=%s, existing key=%s value=%s\n", key, value, t[0].item[0]->key, t[0].item[0]->value.str);
-//        exit(1);
+        if (retrieved_entry->consumed == LM_HASH_INIT_ENTRY_ITEM_SIZE){
+            table->must_grow = true;
+        }
     }
     
     printf("key: %s, value: %s, hash: %lu, slot: %lu\n", key, value, key_hash, entry_slot);
